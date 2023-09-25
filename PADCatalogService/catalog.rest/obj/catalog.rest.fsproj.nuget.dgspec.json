@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/cristiano/Documents/PADLab/PADCatalogService/catalog.rest/catalog.rest.fsproj": {}
+  },
+  "projects": {
+    "/home/cristiano/Documents/PADLab/PADCatalogService/catalog.rest/catalog.rest.fsproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/cristiano/Documents/PADLab/PADCatalogService/catalog.rest/catalog.rest.fsproj",
+        "projectName": "catalog.rest",
+        "projectPath": "/home/cristiano/Documents/PADLab/PADCatalogService/catalog.rest/catalog.rest.fsproj",
+        "packagesPath": "/home/cristiano/.nuget/packages/",
+        "outputPath": "/home/cristiano/Documents/PADLab/PADCatalogService/catalog.rest/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/cristiano/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "FSharp.Core": {
+              "include": "Runtime, Compile, Build, Native, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[6.0.1, )",
+              "generatePathProperty": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/6.0.122/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

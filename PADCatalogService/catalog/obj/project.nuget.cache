@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "85FLE9rnqIYbByLMUA815nhEM/UUOLz5wCp7cC6P+v/+oGzwH5g0kFQdVkhChtuOV4siW6nv4F0pLy231korZA==",
+  "success": true,
+  "projectFilePath": "/home/cristiano/Documents/PADLab/PADCatalogService/catalog/catalog.fsproj",
+  "expectedPackageFiles": [
+    "/home/cristiano/.nuget/packages/fsharp.core/6.0.1/fsharp.core.6.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
