@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "catalog", "catalog\catalog.fsproj", "{C445961B-34AC-4C38-9B19-34900EACA861}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "catalog.dal", "catalog.dal\catalog.dal.fsproj", "{777940B7-6A09-4A69-B16E-03AA54A16D69}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "catalog.rest", "catalog.rest\catalog.rest.fsproj", "{A7BEF2D9-5EDB-4714-BED9-B925C67BF2DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C445961B-34AC-4C38-9B19-34900EACA861}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C445961B-34AC-4C38-9B19-34900EACA861}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C445961B-34AC-4C38-9B19-34900EACA861}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C445961B-34AC-4C38-9B19-34900EACA861}.Release|Any CPU.Build.0 = Release|Any CPU
+		{777940B7-6A09-4A69-B16E-03AA54A16D69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{777940B7-6A09-4A69-B16E-03AA54A16D69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{777940B7-6A09-4A69-B16E-03AA54A16D69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{777940B7-6A09-4A69-B16E-03AA54A16D69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7BEF2D9-5EDB-4714-BED9-B925C67BF2DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7BEF2D9-5EDB-4714-BED9-B925C67BF2DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7BEF2D9-5EDB-4714-BED9-B925C67BF2DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7BEF2D9-5EDB-4714-BED9-B925C67BF2DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
