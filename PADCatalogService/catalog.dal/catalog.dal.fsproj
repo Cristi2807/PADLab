@@ -6,7 +6,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs"/>
+        <Compile Include="Model.fs" />
+        <Compile Include="DalContext.fs"/>
+        <Compile Include="ShoesDal.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.151"/>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="4.9.0"/>
+        <PackageReference Include="Npgsql" Version="7.0.6"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\catalog\catalog.fsproj"/>
     </ItemGroup>
 
 </Project>

@@ -6,7 +6,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs"/>
+        <Compile Include="ServiceUtils.fs"/>
+        <Compile Include="Model.fs" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="4.9.0"/>
+        <PackageReference Include="Thoth.Json.Net" Version="11.0.0"/>
+        <PackageReference Include="giraffe" Version="6.2.0"/>
+    </ItemGroup>
 </Project>
