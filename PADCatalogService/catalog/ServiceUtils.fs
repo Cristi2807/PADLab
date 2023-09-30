@@ -11,6 +11,7 @@ module ServiceUtils =
     | NotFound of string
     | BadRequest of string
     | InternalError of string
+    | RequestTimeout of string
 
   let inline (=>) a b = a, box b
 
@@ -46,13 +47,23 @@ module ServiceUtils =
 
   let toApiResponse (ctx: HttpContext) (res: Async<Result<string, ServiceError>>) =
     task {
-      let! res' = res
+      let res' = res |> Async.StartAsTask
+
+      let (taskDelay: Task<Result<string, ServiceError>>) =
+        task {
+          do! Task.Delay(15000)
+          return "It takes too long to process the request" |> RequestTimeout |> Error
+        }
+
+      let! task = Task.WhenAny([ res'; taskDelay ])
+
+      let! res'' = task
 
       ctx.SetHttpHeader("Access-Control-Allow-Methods", "*")
       ctx.SetHttpHeader("Access-Control-Allow-Headers", "*")
       ctx.SetHttpHeader("Access-Control-Allow-Origin", "*")
 
-      match res' with
+      match res'' with
       | Ok okVal ->
         ctx.SetStatusCode 200
         ctx.SetContentType "application/json"
@@ -67,5 +78,8 @@ module ServiceUtils =
           return! ctx.WriteJsonAsync msg
         | InternalError msg ->
           ctx.SetStatusCode(500)
+          return! ctx.WriteJsonAsync msg
+        | RequestTimeout msg ->
+          ctx.SetStatusCode(408)
           return! ctx.WriteJsonAsync msg
     }

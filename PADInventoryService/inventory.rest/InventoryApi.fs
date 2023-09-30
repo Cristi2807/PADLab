@@ -17,7 +17,6 @@ module InventoryApi =
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
       let! transactions = InventoryDal.getTransactionsByShoesId roDalCtx shoesId
-
       return transactions |> Seq.map Encode.transaction |> Encode.seq |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
@@ -119,7 +118,10 @@ module InventoryApi =
                   { (transaction |> Transaction.fromDomain) with
                       CreationDate = DateTime.UtcNow }
           }
-        | _ -> "Invalid operationType and / or quantity" |> BadRequest |> AsyncResult.returnError
+        | _ ->
+          "Invalid operationType and / or quantity"
+          |> BadRequest
+          |> AsyncResult.returnError
 
       return transactionRes |> Encode.transaction |> Encode.toString 2
     }
