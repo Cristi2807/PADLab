@@ -39,7 +39,7 @@ WORKDIR /app
 COPY --from=build /app/catalog.rest/out .
 
 # Expose the port your Giraffe app is listening on (change 8080 to the appropriate port)
-EXPOSE 8080
+EXPOSE 5050
 
 # Start the application
 ENTRYPOINT ["dotnet", "catalog.rest.dll"]

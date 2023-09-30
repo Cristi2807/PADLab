@@ -74,7 +74,7 @@ module ProductApi =
     |> dalFactory.HandleTransaction
     |> toApiResponse ctx
 
-  let dlcDocumentRoutes: HttpHandler =
+  let productRoutes: HttpHandler =
     choose
       [ route "/shoes" >=> choose [ GET >=> getShoes; POST >=> postShoes ]
 

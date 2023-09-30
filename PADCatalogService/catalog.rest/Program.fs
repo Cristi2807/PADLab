@@ -6,7 +6,7 @@ open Microsoft.Extensions.Hosting
 open catalog.rest
 
 let webApp =
-  choose [ ProductApi.dlcDocumentRoutes; RequestErrors.NOT_FOUND "Not found" ]
+  choose [ ProductApi.productRoutes; RequestErrors.NOT_FOUND "Not found" ]
 
 let configureApp (app: IApplicationBuilder) = app.UseGiraffe webApp
 
