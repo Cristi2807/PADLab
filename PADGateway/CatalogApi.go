@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
@@ -21,6 +22,16 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
+	val, err := rdb.Get(context.Background(), "/shoes").Bytes()
+	if err == nil {
+		//fmt.Println("Using cache")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(val)
+
+		return
+	}
+
 	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes", r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -35,11 +46,15 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		//fmt.Println("Saving in cache")
+		rdb.Set(context.Background(), "/shoes", body, 0)
+	}
+
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -57,8 +72,18 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-
 	params := mux.Vars(r)
+
+	val, err := rdb.Get(context.Background(), "/shoes/"+params["id"]).Bytes()
+	if err == nil {
+		//fmt.Println("Using cache")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(val)
+
+		return
+	}
+
 	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -73,11 +98,15 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		//fmt.Println("Saving in cache")
+		rdb.Set(context.Background(), "/shoes/"+params["id"], body, 0)
+	}
+
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -107,6 +136,11 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if resp.StatusCode == http.StatusOK {
+		//fmt.Println("Deleting from cache")
+		rdb.Del(context.Background(), "/shoes")
+	}
+
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
@@ -114,7 +148,6 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -145,6 +178,12 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if resp.StatusCode == http.StatusOK {
+		//fmt.Println("Deleting from cache")
+		rdb.Del(context.Background(), "/shoes")
+		rdb.Del(context.Background(), "/shoes/"+params["id"])
+	}
+
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
@@ -152,6 +191,5 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }

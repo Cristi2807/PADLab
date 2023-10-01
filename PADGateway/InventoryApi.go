@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"strconv"
 	"sync"
 )
 
@@ -23,8 +26,18 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-
 	params := mux.Vars(r)
+
+	val, err := rdb.Get(context.Background(), "/transaction/"+params["id"]).Bytes()
+	if err == nil {
+		fmt.Println("Using cache")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(val)
+
+		return
+	}
+
 	req, _ := http.NewRequest(r.Method, "http://localhost:7070/transaction/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -39,11 +52,15 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("Saving in cache")
+		rdb.Set(context.Background(), "/transaction/"+params["id"], body, 0)
+	}
+
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -61,8 +78,18 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-
 	params := mux.Vars(r)
+
+	val, err := rdb.Get(context.Background(), "/stock/"+params["id"]).Bytes()
+	if err == nil {
+		fmt.Println("Using cache")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(val)
+
+		return
+	}
+
 	req, _ := http.NewRequest(r.Method, "http://localhost:7070/stock/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -77,11 +104,15 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("Saving in cache")
+		rdb.Set(context.Background(), "/stock/"+params["id"], body, 0)
+	}
+
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -99,8 +130,18 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer r.Body.Close()
-
 	params := mux.Vars(r)
+
+	val, err := rdb.Get(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"]).Bytes()
+	if err == nil {
+		fmt.Println("Using cache")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(val)
+
+		return
+	}
+
 	req, _ := http.NewRequest(r.Method, "http://localhost:7070/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
@@ -115,11 +156,15 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("Saving in cache")
+		rdb.Set(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"], body, 0)
+	}
+
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -157,7 +202,6 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
-	<-concurrentTasks
 	return
 }
 
@@ -179,7 +223,6 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	type Transaction struct {
 		ShoesId       string `json:"shoesId"`
-		Quantity      string `json:"quantity"`
 		OperationType int    `json:"operationType"`
 	}
 
@@ -235,6 +278,13 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == http.StatusOK {
+		fmt.Println("Deleting from cache")
+		rdb.Del(context.Background(), "/transaction/"+cell.ShoesId)
+		rdb.Del(context.Background(), "/stock/"+cell.ShoesId)
+		rdb.Del(context.Background(), "/turnaround/"+cell.ShoesId+"/"+strconv.Itoa(cell.OperationType))
+	}
 
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
