@@ -4,6 +4,7 @@ open System
 open Giraffe
 open Microsoft.AspNetCore.Http
 open inventory
+open inventory.rest.ServiceUtils
 open inventory.Domain
 open inventory.dal
 open inventory.ServiceUtils
@@ -20,7 +21,7 @@ module InventoryApi =
       return transactions |> Seq.map Encode.transaction |> Encode.seq |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let getTurnaround (shoesId: Guid) (operationType: int) (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -40,7 +41,7 @@ module InventoryApi =
         |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let getTurnaroundTimePeriod
     (shoesId: Guid)
@@ -70,7 +71,7 @@ module InventoryApi =
         |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let getStock (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -82,7 +83,7 @@ module InventoryApi =
       return [ "stock", stock |> Encode.int64 ] |> Encode.object |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let postTransaction (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -126,7 +127,7 @@ module InventoryApi =
       return transactionRes |> Encode.transaction |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let inventoryRoutes: HttpHandler =
     choose

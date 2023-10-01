@@ -7,6 +7,7 @@ open catalog
 open catalog.Domain
 open catalog.dal
 open catalog.ServiceUtils
+open catalog.rest.ServiceUtils
 open FsToolkit.ErrorHandling
 open Thoth.Json.Net
 
@@ -22,7 +23,7 @@ module ProductApi =
       return shoes |> Seq.map Encode.shoes |> Encode.seq |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let getShoesById (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -34,7 +35,7 @@ module ProductApi =
       return shoes |> Encode.shoes |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let postShoes (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -53,7 +54,7 @@ module ProductApi =
       return shoesRes |> Encode.shoes |> Encode.toString 2
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let putShoesById (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
     use dalFactory = new DalContextFactory()
@@ -72,7 +73,7 @@ module ProductApi =
       return rowsModified |> string
     }
     |> dalFactory.HandleTransaction
-    |> toApiResponse ctx
+    |> toApiResponse ctx dalFactory
 
   let productRoutes: HttpHandler =
     choose

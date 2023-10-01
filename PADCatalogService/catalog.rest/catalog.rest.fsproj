@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="ServiceUtils.fs" />
         <Compile Include="ProductApi.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
