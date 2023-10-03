@@ -9,17 +9,6 @@ import (
 
 func getShoes(w http.ResponseWriter, r *http.Request) {
 
-	select {
-	case concurrentTasks <- true:
-		defer takeFromChannel()
-	default:
-		//fmt.Println("All resources taken. Not serving your request 429")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusTooManyRequests)
-		w.Write([]byte("\"Concurrency limit achieved.\""))
-		return
-	}
-
 	defer r.Body.Close()
 
 	val, err := rdb.Get(context.Background(), "/shoes").Bytes()
@@ -29,6 +18,17 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
+		return
+	}
+
+	select {
+	case concurrentTasks <- true:
+		defer takeFromChannel()
+	default:
+		//fmt.Println("All resources taken. Not serving your request 429")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
 	}
 
@@ -60,17 +60,6 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 
 func getShoesById(w http.ResponseWriter, r *http.Request) {
 
-	select {
-	case concurrentTasks <- true:
-		defer takeFromChannel()
-	default:
-		//fmt.Println("All resources taken. Not serving your request 429")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusTooManyRequests)
-		w.Write([]byte("\"Concurrency limit achieved.\""))
-		return
-	}
-
 	defer r.Body.Close()
 	params := mux.Vars(r)
 
@@ -81,6 +70,17 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
+		return
+	}
+
+	select {
+	case concurrentTasks <- true:
+		defer takeFromChannel()
+	default:
+		//fmt.Println("All resources taken. Not serving your request 429")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
 	}
 
