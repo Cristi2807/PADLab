@@ -131,7 +131,7 @@ func getRegistryFromServiceDiscovery() {
 	for {
 		time.Sleep(5 * time.Second)
 
-		req, _ := http.NewRequest(http.MethodGet, serviceDiscoveryURL+"/registry", nil)
+		req, _ := http.NewRequest(http.MethodGet, "http://"+serviceDiscoveryURL+"/registry", nil)
 		response, err := http.DefaultClient.Do(req)
 
 		if err != nil {
@@ -150,7 +150,7 @@ func getRegistryFromServiceDiscovery() {
 //func makeRequest() {
 //
 //	//req, _ := http.NewRequest(http.MethodPost, "http://localhost:5000/transaction", strings.NewReader("{\"shoesId\":\"d0d24b92-7df8-45ca-a0e7-cee6a05e1ffc\",\"quantity\":\"15\",\"operationType\": -1}"))
-//	req, _ := http.NewRequest(http.MethodPost, "http://localhost:5001/register/catalog/1", nil)
+//	req, _ := http.NewRequest(http.MethodGet, "http://localhost:5000/shoes", nil)
 //	response, err := http.DefaultClient.Do(req)
 //	if err != nil {
 //		fmt.Println("Error:", err.Error())
@@ -224,10 +224,10 @@ func main() {
 
 	go checkRegistryHealth()
 
-	//time.Sleep(3 * time.Second)
+	//time.Sleep(6 * time.Second)
 	//
 	//fmt.Println("starting request")
-	//for i := 0; i < 5; i++ {
+	//for i := 0; i < 7; i++ {
 	//	go makeRequest()
 	//}
 
