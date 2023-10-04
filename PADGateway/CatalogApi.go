@@ -32,7 +32,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes", r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes", r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -84,7 +84,7 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes/"+params["id"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -125,7 +125,7 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes", r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes", r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -167,7 +167,7 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	params := mux.Vars(r)
-	req, _ := http.NewRequest(r.Method, "http://localhost:5050/shoes/"+params["id"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {

@@ -39,6 +39,7 @@ func registerService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Registering service of type \"", params["serviceType"], "\" on address ", params["serviceURL"])
 	registry[params["serviceType"]] = append(registry[params["serviceType"]], params["serviceURL"])
 
 	w.WriteHeader(200)
@@ -71,6 +72,9 @@ func runServer() {
 }
 
 func main() {
+
+	//registry["catalog"] = []string{"http://localhost:5050"}
+	//registry["inventory"] = []string{"http://localhost:7070"}
 
 	go runServer()
 

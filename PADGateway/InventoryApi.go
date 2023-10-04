@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
@@ -19,7 +18,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 
 	val, err := rdb.Get(context.Background(), "/transaction/"+params["id"]).Bytes()
 	if err == nil {
-		fmt.Println("Using cache")
+		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
@@ -38,7 +37,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:7070/transaction/"+params["id"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/transaction/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -53,7 +52,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Saving in cache")
+		//fmt.Println("Saving in cache")
 		rdb.Set(context.Background(), "/transaction/"+params["id"], body, 0)
 	}
 
@@ -71,7 +70,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 
 	val, err := rdb.Get(context.Background(), "/stock/"+params["id"]).Bytes()
 	if err == nil {
-		fmt.Println("Using cache")
+		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
@@ -90,7 +89,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:7070/stock/"+params["id"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/stock/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -105,7 +104,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Saving in cache")
+		//fmt.Println("Saving in cache")
 		rdb.Set(context.Background(), "/stock/"+params["id"], body, 0)
 	}
 
@@ -123,7 +122,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 
 	val, err := rdb.Get(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"]).Bytes()
 	if err == nil {
-		fmt.Println("Using cache")
+		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
@@ -142,7 +141,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://localhost:7070/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -157,7 +156,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Saving in cache")
+		//fmt.Println("Saving in cache")
 		rdb.Set(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"], body, 0)
 	}
 
@@ -184,7 +183,7 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	params := mux.Vars(r)
-	req, _ := http.NewRequest(r.Method, "http://localhost:7070/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
@@ -236,7 +235,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//checking if such product exists
-	req1, _ := http.NewRequest(http.MethodGet, "http://localhost:5050/shoes/"+cell.ShoesId, nil)
+	req1, _ := http.NewRequest(http.MethodGet, "http://"+roundRobinGetNext("catalog")+"/shoes/"+cell.ShoesId, nil)
 	resp1, err2 := http.DefaultClient.Do(req1)
 
 	if err2 != nil {
@@ -265,7 +264,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rBody = io.NopCloser(bytes.NewReader(reqBytes))
-	req, _ := http.NewRequest(r.Method, "http://localhost:7070/transaction", rBody)
+	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/transaction", rBody)
 	resp, err1 := http.DefaultClient.Do(req)
 
 	if err1 != nil {
@@ -280,7 +279,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	body, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Deleting from cache")
+		//fmt.Println("Deleting from cache")
 		rdb.Del(context.Background(), "/transaction/"+cell.ShoesId)
 		rdb.Del(context.Background(), "/stock/"+cell.ShoesId)
 		rdb.Del(context.Background(), "/turnaround/"+cell.ShoesId+"/"+strconv.Itoa(cell.OperationType))

@@ -1,22 +1,68 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
+	"os"
 	"sync"
+	"time"
 )
+
+var serviceDiscoveryURL string
 
 var ss sync.Map
 var concurrentTasks = make(chan bool, 5)
 
 var rdb *redis.Client
 
+var registry = make(map[string][]string)
+var counter = make(map[string]int)
+var registryMutex sync.Mutex
+
+func roundRobinGetNext(service string) string {
+	registryMutex.Lock()
+	defer registryMutex.Unlock()
+
+	if len(registry[service]) == 0 {
+		return ""
+	}
+
+	counter[service] = (counter[service] + 1) % len(registry[service])
+	return registry[service][counter[service]]
+}
+
+func getRegistryFromServiceDiscovery() {
+	for {
+		time.Sleep(5 * time.Second)
+
+		req, _ := http.NewRequest(http.MethodGet, serviceDiscoveryURL+"/registry", nil)
+		response, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			continue
+		}
+
+		registryMutex.Lock()
+
+		json.NewDecoder(response.Body).Decode(&registry)
+		//fmt.Println(registry)
+
+		for service, _ := range registry {
+			counter[service] = 0
+		}
+
+		registryMutex.Unlock()
+	}
+}
+
 //func makeRequest() {
 //
-//	req, _ := http.NewRequest(http.MethodPost, "http://localhost:5000/transaction", strings.NewReader("{\"shoesId\":\"d0d24b92-7df8-45ca-a0e7-cee6a05e1ffc\",\"quantity\":\"15\",\"operationType\": -1}"))
+//	//req, _ := http.NewRequest(http.MethodPost, "http://localhost:5000/transaction", strings.NewReader("{\"shoesId\":\"d0d24b92-7df8-45ca-a0e7-cee6a05e1ffc\",\"quantity\":\"15\",\"operationType\": -1}"))
+//	req, _ := http.NewRequest(http.MethodPost, "http://localhost:5001/register/catalog/1", nil)
 //	response, err := http.DefaultClient.Do(req)
 //	if err != nil {
 //		fmt.Println("Error:", err.Error())
@@ -26,6 +72,11 @@ var rdb *redis.Client
 //
 //	fmt.Println(response.StatusCode)
 //}
+
+func getStatus(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(200)
+	return
+}
 
 func takeFromChannel() {
 	select {
@@ -38,6 +89,8 @@ func takeFromChannel() {
 
 func runServer() {
 	router := mux.NewRouter()
+
+	router.HandleFunc("/status", getStatus).Methods(http.MethodGet)
 
 	router.HandleFunc("/shoes", getShoes).Methods(http.MethodGet)
 	router.HandleFunc("/shoes/{id}", getShoesById).Methods(http.MethodGet)
@@ -57,14 +110,29 @@ func runServer() {
 }
 
 func main() {
+	redisURL, found := os.LookupEnv("REDIS_URL")
+
+	if found == false {
+		fmt.Println("REDIS_URL ENV variable not set!")
+		return
+	}
+
+	serviceDiscoveryURL, found = os.LookupEnv("SERVICE_DISCOVERY_URL")
+
+	if found == false {
+		fmt.Println("SERVICE_DISCOVERY_URL ENV variable not set!")
+		return
+	}
 
 	rdb = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     redisURL,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
 
 	go runServer()
+
+	go getRegistryFromServiceDiscovery()
 
 	//time.Sleep(3 * time.Second)
 	//
