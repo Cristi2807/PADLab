@@ -75,8 +75,16 @@ module ProductApi =
     |> dalFactory.HandleTransaction
     |> toApiResponse ctx dalFactory
 
+  let getStatus (_: HttpFunc) (ctx: HttpContext) =
+    task {
+      ctx.SetStatusCode 200
+      return! ctx.WriteJsonAsync("OK")
+    }
+
   let productRoutes: HttpHandler =
     choose
-      [ route "/shoes" >=> choose [ GET >=> getShoes; POST >=> postShoes ]
+      [ GET >=> route "/status" >=> getStatus
+
+        route "/shoes" >=> choose [ GET >=> getShoes; POST >=> postShoes ]
 
         routef "/shoes/%O" (fun docId -> choose [ GET >=> getShoesById docId; PUT >=> putShoesById docId ]) ]

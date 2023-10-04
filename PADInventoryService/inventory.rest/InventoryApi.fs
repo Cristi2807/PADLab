@@ -129,9 +129,17 @@ module InventoryApi =
     |> dalFactory.HandleTransaction
     |> toApiResponse ctx dalFactory
 
+  let getStatus (_: HttpFunc) (ctx: HttpContext) =
+    task {
+      ctx.SetStatusCode 200
+      return! ctx.WriteJsonAsync("OK")
+    }
+
   let inventoryRoutes: HttpHandler =
     choose
-      [ GET >=> routef "/transaction/%O" getTransactionsByShoesId
+      [ GET >=> route "/status" >=> getStatus
+
+        GET >=> routef "/transaction/%O" getTransactionsByShoesId
 
         GET >=> routef "/stock/%O" getStock
 
