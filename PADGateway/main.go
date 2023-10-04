@@ -23,6 +23,84 @@ var registry = make(map[string][]string)
 var counter = make(map[string]int)
 var registryMutex sync.Mutex
 
+var statusMutex sync.Mutex
+
+type Status struct {
+	sick       bool
+	errorCount int
+	okCount    int
+}
+
+var status = make(map[string]*Status)
+
+func checkRegistryHealth() {
+	for {
+		time.Sleep(2 * time.Second)
+		//fmt.Println("Checking health of microservices...")
+
+		registryMutex.Lock()
+		reg := registry
+		registryMutex.Unlock()
+
+		statusMutex.Lock()
+
+		for service, urlList := range reg {
+			for i := 0; i < len(urlList); i++ {
+				req, _ := http.NewRequest(http.MethodGet, "http://"+urlList[i]+"/status", nil)
+				_, err := http.DefaultClient.Do(req)
+
+				if status[service+urlList[i]] == nil {
+					status[service+urlList[i]] = &Status{sick: false, okCount: 0, errorCount: 0}
+				}
+
+				// if now error, not sick then increment error count
+				if err != nil && status[service+urlList[i]].sick == false {
+					status[service+urlList[i]].errorCount++
+				}
+
+				// reset error count , if now not error and not sick
+				if err == nil && status[service+urlList[i]].sick == false {
+					status[service+urlList[i]].errorCount = 0
+				}
+
+				// if now not error, but sick increase okCount
+				if err == nil && status[service+urlList[i]].sick == true {
+					status[service+urlList[i]].okCount++
+					status[service+urlList[i]].errorCount = 0
+				}
+
+				// reset okCount, if now error and sick
+				if err != nil && status[service+urlList[i]].sick == true {
+					status[service+urlList[i]].okCount = 0
+					//status[service+urlList[i]].errorCount++
+				}
+
+				if status[service+urlList[i]].sick == false && status[service+urlList[i]].errorCount == 3 {
+					fmt.Println(service, urlList[i], "didn't respond 3 times in a row. Marking it as sick.")
+					status[service+urlList[i]].sick = true
+					status[service+urlList[i]].errorCount = 0
+					status[service+urlList[i]].okCount = 0
+				}
+
+				if status[service+urlList[i]].sick == true && status[service+urlList[i]].okCount == 10 {
+					fmt.Println(service, urlList[i], "responded 10 times in a row. Marking it as healthy again.")
+					status[service+urlList[i]].sick = false
+					status[service+urlList[i]].errorCount = 0
+					status[service+urlList[i]].okCount = 0
+				}
+
+				//if status[service+urlList[i]].sick == true && status[service+urlList[i]].errorCount == 20 {
+				//	fmt.Println("delete at all", service, urlList)
+				//	status[service+urlList[i]].errorCount = 0
+				//	status[service+urlList[i]].okCount = 0
+				//}
+
+			}
+		}
+		statusMutex.Unlock()
+	}
+}
+
 func roundRobinGetNext(service string) string {
 	registryMutex.Lock()
 	defer registryMutex.Unlock()
@@ -32,6 +110,20 @@ func roundRobinGetNext(service string) string {
 	}
 
 	counter[service] = (counter[service] + 1) % len(registry[service])
+
+	statusMutex.Lock()
+
+	// get only healthy instance, if available
+	i := 0
+	for status[service+registry[service][counter[service]]] != nil &&
+		status[service+registry[service][counter[service]]].sick == true &&
+		i < len(registry[service]) {
+		counter[service] = (counter[service] + 1) % len(registry[service])
+		i++
+	}
+
+	statusMutex.Unlock()
+
 	return registry[service][counter[service]]
 }
 
@@ -50,10 +142,6 @@ func getRegistryFromServiceDiscovery() {
 
 		json.NewDecoder(response.Body).Decode(&registry)
 		//fmt.Println(registry)
-
-		for service, _ := range registry {
-			counter[service] = 0
-		}
 
 		registryMutex.Unlock()
 	}
@@ -133,6 +221,8 @@ func main() {
 	go runServer()
 
 	go getRegistryFromServiceDiscovery()
+
+	go checkRegistryHealth()
 
 	//time.Sleep(3 * time.Second)
 	//
