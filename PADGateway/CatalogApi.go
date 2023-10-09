@@ -32,10 +32,13 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes", r.Body)
+	addr := roundRobinGetNext("catalog")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("catalog", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -84,10 +87,13 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes/"+params["id"], r.Body)
+	addr := roundRobinGetNext("catalog")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("catalog", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -125,10 +131,12 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes", r.Body)
+	addr := roundRobinGetNext("catalog")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("catalog", addr)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -167,10 +175,13 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	params := mux.Vars(r)
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("catalog")+"/shoes/"+params["id"], r.Body)
+	addr := roundRobinGetNext("catalog")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("catalog", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))

@@ -37,10 +37,13 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/transaction/"+params["id"], r.Body)
+	addr := roundRobinGetNext("inventory")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/transaction/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("inventory", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -89,10 +92,13 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/stock/"+params["id"], r.Body)
+	addr := roundRobinGetNext("inventory")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/stock/"+params["id"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("inventory", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -141,10 +147,13 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
+	addr := roundRobinGetNext("inventory")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("inventory", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -183,10 +192,13 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	params := mux.Vars(r)
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
+	addr := roundRobinGetNext("inventory")
+	req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
+		registerError("inventory", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -235,10 +247,13 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//checking if such product exists
-	req1, _ := http.NewRequest(http.MethodGet, "http://"+roundRobinGetNext("catalog")+"/shoes/"+cell.ShoesId, nil)
+	addr := roundRobinGetNext("catalog")
+	req1, _ := http.NewRequest(http.MethodGet, "http://"+addr+"/shoes/"+cell.ShoesId, nil)
 	resp1, err2 := http.DefaultClient.Do(req1)
 
 	if err2 != nil {
+		registerError("catalog", addr)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -264,10 +279,14 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rBody = io.NopCloser(bytes.NewReader(reqBytes))
-	req, _ := http.NewRequest(r.Method, "http://"+roundRobinGetNext("inventory")+"/transaction", rBody)
+
+	addr1 := roundRobinGetNext("inventory")
+	req, _ := http.NewRequest(r.Method, "http://"+addr1+"/transaction", rBody)
 	resp, err1 := http.DefaultClient.Do(req)
 
 	if err1 != nil {
+		registerError("inventory", addr1)
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
