@@ -14,7 +14,7 @@ open Thoth.Json.Net
 module ProductApi =
 
   let getShoes (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -26,7 +26,7 @@ module ProductApi =
     |> toApiResponse ctx dalFactory
 
   let getShoesById (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -38,7 +38,7 @@ module ProductApi =
     |> toApiResponse ctx dalFactory
 
   let postShoes (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       let! reqBody = ctx.ReadBodyFromRequestAsync()
@@ -57,7 +57,7 @@ module ProductApi =
     |> toApiResponse ctx dalFactory
 
   let putShoesById (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       let! reqBody = ctx.ReadBodyFromRequestAsync()

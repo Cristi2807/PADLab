@@ -13,7 +13,7 @@ open Thoth.Json.Net
 
 module InventoryApi =
   let getTransactionsByShoesId (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -24,7 +24,7 @@ module InventoryApi =
     |> toApiResponse ctx dalFactory
 
   let getTurnaround (shoesId: Guid) (operationType: int) (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -51,7 +51,7 @@ module InventoryApi =
     (_: HttpFunc)
     (ctx: HttpContext)
     =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -74,7 +74,7 @@ module InventoryApi =
     |> toApiResponse ctx dalFactory
 
   let getStock (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       use! roDalCtx = dalFactory.GetReadContext()
@@ -86,7 +86,7 @@ module InventoryApi =
     |> toApiResponse ctx dalFactory
 
   let postTransaction (_: HttpFunc) (ctx: HttpContext) =
-    use dalFactory = new DalContextFactory()
+    let dalFactory = new DalContextFactory()
 
     asyncResult {
       let! reqBody = ctx.ReadBodyFromRequestAsync()

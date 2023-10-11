@@ -56,7 +56,10 @@ type DalContextFactory() =
     match writeCtx with
     | Some dalCtx ->
       match dalCtx.DbTransaction with
-      | Some tr -> tr.Commit()
+      | Some tr ->
+        tr.Commit()
+        tr.Dispose()
+        (dalCtx :> IDisposable).Dispose()
       | _ -> ()
     | _ -> ()
 
@@ -64,7 +67,10 @@ type DalContextFactory() =
     match writeCtx with
     | Some dalCtx ->
       match dalCtx.DbTransaction with
-      | Some tr -> tr.Rollback()
+      | Some tr ->
+        tr.Rollback()
+        tr.Dispose()
+        (dalCtx :> IDisposable).Dispose()
       | _ -> ()
     | _ -> ()
 
@@ -95,10 +101,15 @@ type DalContextFactory() =
 
   member __.HandleTransaction(res: Async<Result<string, ServiceError>>) =
     res
-    |> AsyncResult.tee (fun _ -> __.CommitTransaction())
-    |> AsyncResult.teeError (fun _ -> __.Rollback())
+    |> AsyncResult.tee (fun _ ->
+      __.CommitTransaction()
+      __.Dispose())
+    |> AsyncResult.teeError (fun _ ->
+      __.Rollback()
+      __.Dispose())
+
+  member __.Dispose() =
+    writeCtx |> Option.iter (fun ctx -> (ctx :> IDisposable).Dispose())
 
   interface IDisposable with
-    member this.Dispose() =
-      // printfn "dalCtxFactory.dispose"
-      writeCtx |> Option.iter (fun x -> (x :> IDisposable).Dispose())
+    member this.Dispose() = this.Dispose()
