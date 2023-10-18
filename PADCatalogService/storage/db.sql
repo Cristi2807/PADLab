@@ -1,6 +1,20 @@
-CREATE SCHEMA IF NOT EXISTS catalog
-    AUTHORIZATION postgres;
+-- Database: catalog_pad_lab
 
+DROP DATABASE IF EXISTS catalog_pad_lab;
+
+CREATE DATABASE catalog_pad_lab
+    WITH
+    OWNER = cristi
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'en_US.utf8'
+    LC_CTYPE = 'en_US.utf8'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1
+    IS_TEMPLATE = False;
+
+\c catalog_pad_lab;
+	
+CREATE SCHEMA IF NOT EXISTS catalog;
 --------------------------------
 
 CREATE TABLE catalog."Products"
@@ -15,5 +29,3 @@ CREATE TABLE catalog."Products"
     PRIMARY KEY ("Id")
 ) TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS catalog."Products"
-    OWNER to postgres;

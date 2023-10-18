@@ -1,7 +1,7 @@
 version: '3'
 services:
   gateway:
-    image: gateway-image:latest
+    image: cristi2807/padgateway:latest
     container_name: "gateway"
     depends_on:
       - postgres
@@ -16,7 +16,7 @@ services:
       pad-net:
 
   service_discovery:
-    image: service-discovery-image:latest
+    image: cristi2807/padservicediscovery:latest
     container_name: "service_discovery"
     restart: unless-stopped
     depends_on:
@@ -25,7 +25,7 @@ services:
       pad-net:
              
   inventory_service:
-    image: inventory-image:latest
+    image: cristi2807/padinventoryservice:latest
     container_name: "inventory"
     restart: unless-stopped
     depends_on:
@@ -42,7 +42,7 @@ services:
       pad-net:
       
   catalog_service:
-    image: catalog-image:latest
+    image: cristi2807/padcatalogservice:latest
     container_name: "catalog"
     restart: unless-stopped
     depends_on:
@@ -59,7 +59,7 @@ services:
       pad-net:        
 
   inventory_service2:
-    image: inventory-image:latest
+    image: cristi2807/padinventoryservice:latest
     container_name: "inventory2"
     restart: unless-stopped
     depends_on:
@@ -76,7 +76,7 @@ services:
       pad-net:
       
   catalog_service2:
-    image: catalog-image:latest
+    image: cristi2807/padcatalogservice:latest
     container_name: "catalog2"
     restart: unless-stopped
     depends_on:
@@ -91,7 +91,40 @@ services:
       - DB_PASSWORD=p4ssw0rd
     networks:
       pad-net:        
-        
+
+  inventory_service3:
+    image: cristi2807/padinventoryservice:latest
+    container_name: "inventory3"
+    restart: unless-stopped
+    depends_on:
+      - service_discovery
+    environment:
+      - SERVICE_DISCOVERY_URL=service_discovery:5001
+      - MY_IP=inventory3
+      - DB_HOST=my_postgres
+      - DB_RO_HOST=my_postgres
+      - DB_NAME=inventory_pad_lab
+      - DB_USER=cristi
+      - DB_PASSWORD=p4ssw0rd
+    networks:
+      pad-net:
+      
+  catalog_service3:
+    image: cristi2807/padcatalogservice:latest
+    container_name: "catalog3"
+    restart: unless-stopped
+    depends_on:
+      - service_discovery
+    environment:
+      - SERVICE_DISCOVERY_URL=service_discovery:5001
+      - MY_IP=catalog3
+      - DB_HOST=my_postgres
+      - DB_RO_HOST=my_postgres
+      - DB_NAME=catalog_pad_lab
+      - DB_USER=cristi
+      - DB_PASSWORD=p4ssw0rd
+    networks:
+      pad-net:                
         
   redis_db:
     image: redis:latest
@@ -107,7 +140,9 @@ services:
       - POSTGRES_USER=cristi
       - POSTGRES_PASSWORD=p4ssw0rd
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - ./pg_data:/var/lib/postgresql/data
+      - ./PADInventoryService/storage/db.sql:/docker-entrypoint-initdb.d/inventory.sql
+      - ./PADCatalogService/storage/db.sql:/docker-entrypoint-initdb.d/catalog.sql
     networks:
       pad-net:
         
