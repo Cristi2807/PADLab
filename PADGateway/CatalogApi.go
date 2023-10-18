@@ -9,7 +9,7 @@ import (
 
 func getShoes(w http.ResponseWriter, r *http.Request) {
 
-	defer r.Body.Close()
+	//defer r.Body.Close()
 
 	val, err := rdb.Get(context.Background(), "/shoes").Bytes()
 	if err == nil {
@@ -63,7 +63,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 
 func getShoesById(w http.ResponseWriter, r *http.Request) {
 
-	defer r.Body.Close()
+	//defer r.Body.Close()
 	params := mux.Vars(r)
 
 	val, err := rdb.Get(context.Background(), "/shoes/"+params["id"]).Bytes()
