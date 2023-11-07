@@ -37,31 +37,37 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := roundRobinGetNext("inventory")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/transaction/"+params["id"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("inventory", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("inventory")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/transaction/"+params["id"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("inventory", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Set(context.Background(), "/transaction/"+params["id"], body, 0)
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Saving in cache")
-		rdb.Set(context.Background(), "/transaction/"+params["id"], body, 0)
-	}
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
 }
@@ -92,31 +98,37 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := roundRobinGetNext("inventory")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/stock/"+params["id"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("inventory", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("inventory")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/stock/"+params["id"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("inventory", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Set(context.Background(), "/stock/"+params["id"], body, 0)
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Saving in cache")
-		rdb.Set(context.Background(), "/stock/"+params["id"], body, 0)
-	}
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
 }
@@ -147,31 +159,37 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := roundRobinGetNext("inventory")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("inventory", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("inventory")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("inventory", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Set(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"], body, 0)
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Saving in cache")
-		rdb.Set(context.Background(), "/turnaround/"+params["id"]+"/"+params["opType"], body, 0)
-	}
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
 }
@@ -192,28 +210,36 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	params := mux.Vars(r)
-	addr := roundRobinGetNext("inventory")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
 
-	if err != nil {
-		registerError("inventory", addr)
+	var forwards = 0
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("inventory")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/turnaround/"+params["id"]+"/"+params["opType"]+"/"+params["since"]+"/"+params["until"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		return
+		if err1 != nil {
+			go circuitBreaker("inventory", addr)
+			forwards++
+
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
+
 }
 
 func postTransaction(w http.ResponseWriter, r *http.Request) {
@@ -247,13 +273,9 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//checking if such product exists
-	addr := roundRobinGetNext("catalog")
-	req1, _ := http.NewRequest(http.MethodGet, "http://"+addr+"/shoes/"+cell.ShoesId, nil)
-	resp1, err2 := http.DefaultClient.Do(req1)
+	resp1, _ := makeRequestWithRouting("catalog", http.MethodGet, "/shoes/"+cell.ShoesId, nil)
 
-	if err2 != nil {
-		registerError("catalog", addr)
-
+	if resp1 == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
@@ -280,12 +302,9 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	rBody = io.NopCloser(bytes.NewReader(reqBytes))
 
-	addr1 := roundRobinGetNext("inventory")
-	req, _ := http.NewRequest(r.Method, "http://"+addr1+"/transaction", rBody)
-	resp, err1 := http.DefaultClient.Do(req)
+	resp, _ := makeRequestWithRouting("inventory", r.Method, "/transaction", rBody)
 
-	if err1 != nil {
-		registerError("inventory", addr1)
+	if resp == nil {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -307,20 +326,6 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-
-	//if cell.OperationType == -1 {
-	//	mutex.Unlock()
-	//	//time.Sleep(time.Millisecond)
-	//	//if mutex.TryLock() == true {
-	//	//	mutex.Unlock()
-	//	//	ss.Delete("1")
-	//	//	fmt.Println("No other thread in queue, deleting mutex from sync.Map")
-	//	//}
-	//}
-
-	//if cell.OperationType == -1 {
-	//	fmt.Println("Exiting mutex ", cell.ShoesId, " at ", time.Now())
-	//}
 
 	return
 }

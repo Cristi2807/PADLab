@@ -32,33 +32,40 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := roundRobinGetNext("catalog")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("catalog", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("catalog")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("catalog", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Set(context.Background(), "/shoes", body, 0)
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Saving in cache")
-		rdb.Set(context.Background(), "/shoes", body, 0)
-	}
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
+
 }
 
 func getShoesById(w http.ResponseWriter, r *http.Request) {
@@ -87,33 +94,40 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addr := roundRobinGetNext("catalog")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("catalog", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("catalog")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("catalog", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Set(context.Background(), "/shoes/"+params["id"], body, 0)
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Saving in cache")
-		rdb.Set(context.Background(), "/shoes/"+params["id"], body, 0)
-	}
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
+
 }
 
 func postShoes(w http.ResponseWriter, r *http.Request) {
@@ -131,35 +145,44 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	addr := roundRobinGetNext("catalog")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("catalog", addr)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("catalog")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes", r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		return
+		if err1 != nil {
+			go circuitBreaker("catalog", addr)
+			forwards++
+
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Saving in cache")
+				rdb.Del(context.Background(), "/shoes")
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Deleting from cache")
-		rdb.Del(context.Background(), "/shoes")
-	}
-
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
 }
 
 func putShoesById(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
 
 	select {
 	case concurrentTasks <- true:
@@ -174,33 +197,38 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	params := mux.Vars(r)
-	addr := roundRobinGetNext("catalog")
-	req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
-	resp, err := http.DefaultClient.Do(req)
+	var forwards = 0
 
-	if err != nil {
-		registerError("catalog", addr)
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext("catalog")
+		req, _ := http.NewRequest(r.Method, "http://"+addr+"/shoes/"+params["id"], r.Body)
+		resp, err1 := http.DefaultClient.Do(req)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("\"An internal error happened. Try again later\""))
+		if err1 != nil {
+			go circuitBreaker("catalog", addr)
+			forwards++
 
-		return
+		} else {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+
+			if resp.StatusCode == http.StatusOK {
+				//fmt.Println("Deleting from cache")
+				rdb.Del(context.Background(), "/shoes")
+				rdb.Del(context.Background(), "/shoes/"+params["id"])
+			}
+
+			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			w.WriteHeader(resp.StatusCode)
+			w.Write(body)
+
+			return
+		}
 	}
 
-	if resp.StatusCode == http.StatusOK {
-		//fmt.Println("Deleting from cache")
-		rdb.Del(context.Background(), "/shoes")
-		rdb.Del(context.Background(), "/shoes/"+params["id"])
-	}
-
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("\"An internal error happened. Try again later\""))
 
 	return
 }

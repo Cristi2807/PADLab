@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/redis/go-redis/v9"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
 
 var serviceDiscoveryURL string
+
+var routingThreshold int
 
 var ss sync.Map
 var concurrentTasks = make(chan bool, 5)
@@ -23,35 +27,51 @@ var registry = make(map[string][]string)
 var counter = make(map[string]int)
 var registryMutex sync.Mutex
 
-type Status struct {
-	errors []int64
-	sick   bool
+func makeRequestWithRouting(service string, method string, path string, body io.Reader) (*http.Response, string) {
+	var forwards = 0
+
+	for forwards <= routingThreshold {
+		addr := roundRobinGetNext(service)
+		req, _ := http.NewRequest(method, "http://"+addr+path, body)
+		resp, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			go circuitBreaker(service, addr)
+			forwards++
+
+		} else {
+			defer resp.Body.Close()
+
+			return resp, addr
+		}
+	}
+
+	return nil, ""
 }
 
-var statusMutex sync.Mutex
-var status = make(map[string]*Status)
+func circuitBreaker(sName string, sAddr string) {
 
-func registerError(sName string, sAddr string) {
+	var stop = time.Now().Add(52 * time.Second)
+	var errCount = 0
 
-	statusMutex.Lock()
-	defer statusMutex.Unlock()
+	for time.Now().Before(stop) {
 
-	if status[sName+sAddr] == nil {
-		status[sName+sAddr] = &Status{sick: false, errors: make([]int64, 0)}
-	}
+		req, _ := http.NewRequest(http.MethodGet, "http://"+sAddr+"/status", nil)
+		_, err := http.DefaultClient.Do(req)
 
-	if status[sName+sAddr].sick == false {
-		status[sName+sAddr].errors = append(status[sName+sAddr].errors, time.Now().UnixMilli())
-
-		if len(status[sName+sAddr].errors) == 4 {
-			status[sName+sAddr].errors = status[sName+sAddr].errors[1:]
+		if err != nil {
+			errCount++
 		}
 
-		if len(status[sName+sAddr].errors) == 3 && (status[sName+sAddr].errors[2]-status[sName+sAddr].errors[0] <= 52*time.Second.Milliseconds()) {
-			status[sName+sAddr].sick = true
+		if errCount == 3 {
 			fmt.Println("Service of type \"", sName, "\" found ", sAddr, " is SICK. 3 errors in <= 52 seconds.")
+			return
 		}
+
+		time.Sleep(300 * time.Millisecond)
 	}
+
+	return
 }
 
 func roundRobinGetNext(service string) string {
@@ -151,6 +171,22 @@ func main() {
 		fmt.Println("SERVICE_DISCOVERY_URL ENV variable not set!")
 		return
 	}
+
+	routingThresholdString, found1 := os.LookupEnv("ROUTING_THRESHOLD")
+
+	if found1 == false {
+		fmt.Println("ROUTING_THRESHOLD ENV variable not set!")
+		return
+	}
+
+	routingThresholdInt, err := strconv.Atoi(routingThresholdString)
+
+	if err != nil {
+		fmt.Println("ROUTING_THRESHOLD must be an INT.")
+		return
+	}
+
+	routingThreshold = routingThresholdInt
 
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     redisURL,

@@ -1,7 +1,7 @@
 version: '3'
 services:
   gateway:
-    image: cristi2807/padgateway:latest
+    image: pad-gateway-image:latest
     container_name: "gateway"
     depends_on:
       - postgres
@@ -12,6 +12,7 @@ services:
     environment:
       - REDIS_URL=redis_cache:6379
       - SERVICE_DISCOVERY_URL=service_discovery:5001
+      - ROUTING_THRESHOLD=2
     networks:
       pad-net:
 
