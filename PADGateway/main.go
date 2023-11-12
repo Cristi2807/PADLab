@@ -40,8 +40,6 @@ func makeRequestWithRouting(service string, method string, path string, body io.
 			forwards++
 
 		} else {
-			defer resp.Body.Close()
-
 			return resp, addr
 		}
 	}
@@ -150,6 +148,7 @@ func runServer() {
 	router.HandleFunc("/turnaround/{id}/{opType}", getTurnaround).Methods(http.MethodGet)
 	router.HandleFunc("/turnaround/{id}/{opType}/{since}/{until}", getTurnaroundTimePeriod).Methods(http.MethodGet)
 	router.HandleFunc("/transaction", postTransaction).Methods(http.MethodPost)
+	router.HandleFunc("/transaction/2phase", postTransactionTwoPhase).Methods(http.MethodPost)
 
 	fmt.Println("API Gateway started")
 	if err := http.ListenAndServe(":5000", router); err != nil {

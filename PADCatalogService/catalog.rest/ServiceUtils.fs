@@ -14,6 +14,7 @@ module ServiceUtils =
           Async.RunSynchronously(res, 15000)
         with _ ->
           dalFactory.Rollback()
+          dalFactory.Dispose()
           "It takes too long to process the request" |> RequestTimeout |> Error
 
 

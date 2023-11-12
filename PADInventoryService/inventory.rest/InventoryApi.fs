@@ -12,6 +12,9 @@ open FsToolkit.ErrorHandling
 open Thoth.Json.Net
 
 module InventoryApi =
+
+  let mutable openTransactions: Map<Guid, DalContextFactory> = Map.empty
+
   let getTransactionsByShoesId (shoesId: Guid) (_: HttpFunc) (ctx: HttpContext) =
     let dalFactory = new DalContextFactory()
 
@@ -129,6 +132,78 @@ module InventoryApi =
     |> dalFactory.HandleTransaction
     |> toApiResponse ctx dalFactory
 
+
+  let postTransactionTwoPhase (_: HttpFunc) (ctx: HttpContext) =
+    let dalFactory = new DalContextFactory()
+
+    asyncResult {
+      let! reqBody = ctx.ReadBodyFromRequestAsync()
+
+      let! transaction =
+        Decode.fromString (Decode.transaction ()) reqBody
+        |> Result.mapError (fun ex -> ex |> BadRequest)
+
+      let! wDalCtx = dalFactory.GetWriteContext()
+
+      let! transactionRes =
+        match transaction.OperationType, transaction.Quantity with
+        | 1s, x when x > 0 ->
+          InventoryDal.createTransaction
+            wDalCtx
+            { (transaction |> Transaction.fromDomain) with
+                CreationDate = DateTime.UtcNow }
+        | -1s, x when x > 0 ->
+          asyncResult {
+            use! roDalCtx = dalFactory.GetReadContext()
+            let (ShoesId sId) = transaction.ShoesId
+            let! stock = InventoryDal.getStock roDalCtx sId
+
+            match stock - transaction.Quantity with
+            | x when x < 0 -> return! "No such quantity in stock to retrieve" |> BadRequest |> AsyncResult.returnError
+            | _ ->
+              return!
+                InventoryDal.createTransaction
+                  wDalCtx
+                  { (transaction |> Transaction.fromDomain) with
+                      CreationDate = DateTime.UtcNow }
+          }
+        | _ ->
+          "Invalid operationType and / or quantity"
+          |> BadRequest
+          |> AsyncResult.returnError
+
+      let (TransactionId tId) = transactionRes.Id
+      openTransactions <- openTransactions.Add(tId, dalFactory)
+
+      return transactionRes |> Encode.transaction |> Encode.toString 2
+    }
+    |> AsyncResult.teeError (fun _ ->
+      dalFactory.Rollback()
+      dalFactory.Dispose())
+    |> toApiResponse ctx dalFactory
+
+  let commit (transactionId: Guid) (_: HttpFunc) (ctx: HttpContext) =
+    let dalFactory = openTransactions.Item transactionId
+    openTransactions <- openTransactions.Remove transactionId
+
+    asyncResult {
+      dalFactory.CommitTransaction()
+      dalFactory.Dispose()
+      return "Transaction commit"
+    }
+    |> toApiResponse ctx dalFactory
+
+  let rollback (transactionId: Guid) (_: HttpFunc) (ctx: HttpContext) =
+    let dalFactory = openTransactions.Item transactionId
+    openTransactions <- openTransactions.Remove transactionId
+
+    asyncResult {
+      dalFactory.Rollback()
+      dalFactory.Dispose()
+      return "Transaction rollback"
+    }
+    |> toApiResponse ctx dalFactory
+
   let getStatus (_: HttpFunc) (ctx: HttpContext) =
     task {
       ctx.SetStatusCode 200
@@ -138,6 +213,12 @@ module InventoryApi =
   let inventoryRoutes: HttpHandler =
     choose
       [ GET >=> route "/status" >=> getStatus
+
+        POST >=> routef "/commit/%O" commit
+
+        POST >=> routef "/rollback/%O" rollback
+
+        POST >=> route "/transaction/2phase" >=> postTransactionTwoPhase
 
         GET >=> routef "/transaction/%O" getTransactionsByShoesId
 

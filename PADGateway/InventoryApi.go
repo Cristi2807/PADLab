@@ -329,3 +329,133 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	return
 }
+
+func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
+
+	select {
+	case concurrentTasks <- true:
+		defer takeFromChannel()
+	default:
+		//fmt.Println("All resources taken. Not serving your request 429")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		w.Write([]byte("\"Concurrency limit achieved.\""))
+		return
+	}
+
+	type Shoes struct {
+		Id       string `json:"id,omitempty"`
+		Color    string `json:"color"`
+		Size     string `json:"size"`
+		Price    string `json:"price"`
+		Brand    string `json:"brand"`
+		Category string `json:"category"`
+		Model    string `json:"model"`
+	}
+
+	type Transaction struct {
+		Id            string `json:"id,omitempty"`
+		ShoesId       string `json:"shoesId"`
+		OperationType int    `json:"operationType"`
+		Quantity      string `json:"quantity"`
+	}
+
+	type TwoPhase struct {
+		Shoes       Shoes       `json:"shoes"`
+		Transaction Transaction `json:"transaction"`
+	}
+
+	var cell TwoPhase
+
+	err := json.NewDecoder(r.Body).Decode(&cell)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if cell.Transaction.OperationType == -1 {
+		http.Error(w, "Invalid operationType for a new product.", http.StatusBadRequest)
+		return
+	}
+
+	body1, _ := json.Marshal(cell.Shoes)
+	body2 := io.NopCloser(bytes.NewReader(body1))
+	resp1, catalogAddr := makeRequestWithRouting("catalog", http.MethodPost, "/shoes/2phase", body2)
+
+	if resp1 == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("\"An internal error happened. Try again later\""))
+
+		return
+	}
+
+	if resp1.StatusCode != http.StatusOK {
+		w.Header().Set("Content-Type", resp1.Header.Get("Content-Type"))
+		w.WriteHeader(resp1.StatusCode)
+		body, _ := io.ReadAll(resp1.Body)
+		w.Write(body)
+
+		return
+	}
+
+	var shoes Shoes
+	json.NewDecoder(resp1.Body).Decode(&shoes)
+
+	cell.Shoes.Id = shoes.Id
+	cell.Transaction.ShoesId = shoes.Id
+	body3, _ := json.Marshal(cell.Transaction)
+	body4 := io.NopCloser(bytes.NewReader(body3))
+	resp, inventoryAddr := makeRequestWithRouting("inventory", http.MethodPost, "/transaction/2phase", body4)
+
+	if resp == nil {
+		req, _ := http.NewRequest(http.MethodPost, "http://"+catalogAddr+"/rollback/"+shoes.Id, nil)
+		http.DefaultClient.Do(req)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("\"An internal error happened. Try again later\""))
+
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		req, _ := http.NewRequest(http.MethodPost, "http://"+catalogAddr+"/rollback/"+shoes.Id, nil)
+		http.DefaultClient.Do(req)
+
+		w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+		w.WriteHeader(resp.StatusCode)
+		body, _ := io.ReadAll(resp.Body)
+		w.Write(body)
+
+		return
+	}
+
+	var transaction Transaction
+	json.NewDecoder(resp.Body).Decode(&transaction)
+	cell.Transaction.Id = transaction.Id
+
+	req, _ := http.NewRequest(http.MethodPost, "http://"+catalogAddr+"/commit/"+shoes.Id, nil)
+	_, err1 := http.DefaultClient.Do(req)
+
+	if err1 != nil {
+		req1, _ := http.NewRequest(http.MethodPost, "http://"+inventoryAddr+"/rollback/"+transaction.Id, nil)
+		http.DefaultClient.Do(req1)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("\"An internal error happened. Try again later\""))
+
+		return
+	}
+
+	req1, _ := http.NewRequest(http.MethodPost, "http://"+inventoryAddr+"/commit/"+transaction.Id, nil)
+	http.DefaultClient.Do(req1)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	finalBody, _ := json.Marshal(cell)
+	w.Write(finalBody)
+
+	return
+}
