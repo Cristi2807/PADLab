@@ -15,6 +15,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[200]++
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
@@ -27,6 +28,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -53,6 +55,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -61,6 +64,7 @@ func getShoes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -77,6 +81,7 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[200]++
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
@@ -89,6 +94,7 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -115,6 +121,7 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -123,6 +130,7 @@ func getShoesById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -138,6 +146,7 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -166,6 +175,7 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -174,6 +184,7 @@ func postShoes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -190,6 +201,7 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -219,6 +231,7 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -227,6 +240,7 @@ func putShoesById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 

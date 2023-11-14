@@ -129,9 +129,25 @@ module ProductApi =
       return! ctx.WriteJsonAsync("OK")
     }
 
+  let getMetrics (_: HttpFunc) (ctx: HttpContext) =
+    task {
+      let mutable listToReturn =
+        [ "# HELP http_requests_total The total number of HTTP requests."
+          "# TYPE http_requests_total counter" ]
+
+      requestCounts.Keys
+      |> Seq.iter (fun key ->
+        listToReturn <- listToReturn @ [ $"http_requests_total{{code=\"{key}\"}} {requestCounts[key]}" ])
+
+      ctx.SetStatusCode 200
+      return! ctx.WriteTextAsync(String.concat "\n" listToReturn)
+    }
+
   let productRoutes: HttpHandler =
     choose
       [ GET >=> route "/status" >=> getStatus
+
+        GET >=> route "/metrics" >=> getMetrics
 
         POST >=> routef "/commit/%O" commit
 

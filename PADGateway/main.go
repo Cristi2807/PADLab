@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +27,8 @@ var rdb *redis.Client
 var registry = make(map[string][]string)
 var counter = make(map[string]int)
 var registryMutex sync.Mutex
+
+var requestCounts = make(map[int]int)
 
 func makeRequestWithRouting(service string, method string, path string, body io.Reader) (*http.Response, string) {
 	var forwards = 0
@@ -120,7 +123,25 @@ func getRegistryFromServiceDiscovery() {
 //}
 
 func getStatus(w http.ResponseWriter, r *http.Request) {
+	requestCounts[200]++
 	w.WriteHeader(200)
+	return
+}
+
+func getMetrics(w http.ResponseWriter, _ *http.Request) {
+
+	arr := []string{"# HELP http_requests_total The total number of HTTP requests.", "# TYPE http_requests_total counter"}
+
+	for statusCode, nr := range requestCounts {
+		arr = append(arr, fmt.Sprintf("http_requests_total{code=\"%d\"} %d", statusCode, nr))
+	}
+
+	result := strings.Join(arr, "\n")
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(200)
+	w.Write([]byte(result))
+
 	return
 }
 
@@ -137,6 +158,7 @@ func runServer() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/status", getStatus).Methods(http.MethodGet)
+	router.HandleFunc("/metrics", getMetrics).Methods(http.MethodGet)
 
 	router.HandleFunc("/shoes", getShoes).Methods(http.MethodGet)
 	router.HandleFunc("/shoes/{id}", getShoesById).Methods(http.MethodGet)
@@ -157,6 +179,14 @@ func runServer() {
 }
 
 func main() {
+
+	requestCounts[200] = 0
+	requestCounts[400] = 0
+	requestCounts[404] = 0
+	requestCounts[408] = 0
+	requestCounts[500] = 0
+	requestCounts[429] = 0
+
 	redisURL, found := os.LookupEnv("REDIS_URL")
 
 	if found == false {

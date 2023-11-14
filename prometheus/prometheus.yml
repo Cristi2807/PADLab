@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090', 'gateway:5000', 'service_discovery:5001', 'inventory:7070', 'inventory2:7070', 'inventory3:7070', 'catalog:5050', 'catalog2:5050', 'catalog3:5050']

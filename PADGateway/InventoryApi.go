@@ -20,6 +20,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[200]++
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
@@ -32,6 +33,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -58,6 +60,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -66,6 +69,7 @@ func getTransactionsByShoesId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -81,6 +85,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[200]++
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
@@ -93,6 +98,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -119,6 +125,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -127,6 +134,7 @@ func getStockByShoesId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -142,6 +150,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		//fmt.Println("Using cache")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[200]++
 		w.WriteHeader(http.StatusOK)
 		w.Write(val)
 
@@ -154,6 +163,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -180,6 +190,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -188,6 +199,7 @@ func getTurnaround(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -202,6 +214,7 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -227,6 +240,7 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 			body, _ := io.ReadAll(resp.Body)
 
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+			requestCounts[resp.StatusCode]++
 			w.WriteHeader(resp.StatusCode)
 			w.Write(body)
 
@@ -235,6 +249,7 @@ func getTurnaroundTimePeriod(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[500]++
 	w.WriteHeader(http.StatusInternalServerError)
 	w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -250,6 +265,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -277,6 +293,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	if resp1 == nil {
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[500]++
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -285,6 +302,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 
 	if resp1.StatusCode == http.StatusNotFound {
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[404]++
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("\"Cannot write transaction for non-existing in catalog product\""))
 
@@ -307,6 +325,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	if resp == nil {
 
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[500]++
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -324,6 +343,7 @@ func postTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	requestCounts[resp.StatusCode]++
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
 
@@ -338,6 +358,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 	default:
 		//fmt.Println("All resources taken. Not serving your request 429")
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[429]++
 		w.WriteHeader(http.StatusTooManyRequests)
 		w.Write([]byte("\"Concurrency limit achieved.\""))
 		return
@@ -384,6 +405,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 
 	if resp1 == nil {
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[500]++
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -392,6 +414,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 
 	if resp1.StatusCode != http.StatusOK {
 		w.Header().Set("Content-Type", resp1.Header.Get("Content-Type"))
+		requestCounts[resp1.StatusCode]++
 		w.WriteHeader(resp1.StatusCode)
 		body, _ := io.ReadAll(resp1.Body)
 		w.Write(body)
@@ -413,6 +436,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 		http.DefaultClient.Do(req)
 
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[500]++
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -424,6 +448,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 		http.DefaultClient.Do(req)
 
 		w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+		requestCounts[resp.StatusCode]++
 		w.WriteHeader(resp.StatusCode)
 		body, _ := io.ReadAll(resp.Body)
 		w.Write(body)
@@ -443,6 +468,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 		http.DefaultClient.Do(req1)
 
 		w.Header().Set("Content-Type", "application/json")
+		requestCounts[500]++
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("\"An internal error happened. Try again later\""))
 
@@ -453,6 +479,7 @@ func postTransactionTwoPhase(w http.ResponseWriter, r *http.Request) {
 	http.DefaultClient.Do(req1)
 
 	w.Header().Set("Content-Type", "application/json")
+	requestCounts[200]++
 	w.WriteHeader(http.StatusOK)
 	finalBody, _ := json.Marshal(cell)
 	w.Write(finalBody)

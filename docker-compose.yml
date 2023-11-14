@@ -1,7 +1,7 @@
 version: '3'
 services:
   gateway:
-    image: pad-gateway-image:latest
+    image: cristi2807/padgateway:latest
     container_name: "gateway"
     depends_on:
       - postgres
@@ -159,6 +159,20 @@ services:
       - "5481:80"
     networks:
       pad-net:
+
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    depends_on:
+      - service_discovery
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command: 
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    networks:
+      pad-net:
+  
 
 volumes:
   pg_data:   
