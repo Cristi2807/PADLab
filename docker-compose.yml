@@ -127,13 +127,90 @@ services:
     networks:
       pad-net:                
         
-  redis_db:
+  # redis_db:
+  #   image: redis:latest
+  #   container_name: "redis_cache"
+  #   restart: unless-stopped
+  #   networks:
+  #     pad-net:
+
+  redis-node-1:
     image: redis:latest
-    container_name: "redis_cache"
-    restart: unless-stopped
+    ports:
+      - 7000:7000
     networks:
       pad-net:
-        
+    hostname: redis-node-1
+    volumes:
+      - ./7000:/redis
+    command: redis-server /redis/redis.conf
+  redis-node-2:
+    image: redis:latest
+    ports:
+      - 7001:7001
+    networks:
+      pad-net:
+    hostname: redis-node-2
+    volumes:
+      - ./7001:/redis
+    command: redis-server /redis/redis.conf
+  redis-node-3:
+    image: redis:latest
+    ports:
+      - 7002:7002
+    networks:
+      pad-net:
+    hostname: redis-node-3
+    volumes:
+      - ./7002:/redis
+    command: redis-server /redis/redis.conf
+  redis-node-4:
+    image: redis:latest
+    ports:
+      - 7003:7003
+    networks:
+      pad-net:
+    hostname: redis-node-4
+    volumes:
+      - ./7003:/redis
+    command: redis-server /redis/redis.conf
+  redis-node-5:
+    image: redis:latest
+    ports:
+      - 7004:7004
+    networks:
+      pad-net:
+    hostname: redis-node-5
+    volumes:
+      - ./7004:/redis
+    command: redis-server /redis/redis.conf
+  redis-node-6:
+    image: redis:latest
+    ports:
+      - 7005:7005
+    networks:
+      pad-net:
+    hostname: redis-node-6
+    volumes:
+      - ./7005:/redis
+    command: redis-server /redis/redis.conf
+
+  redis-cluster-creator:
+    image: redis:latest
+    ports:
+      - 6999:6999
+    networks:
+      pad-net:
+    command: redis-cli -p 7000 --cluster create redis-node-1:7000 redis-node-2:7001 redis-node-3:7002 redis-node-4:7003 redis-node-5:7004 redis-node-6:7005 --cluster-replicas 1 --cluster-yes
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+      
+
   postgres:
     image: postgres:14-alpine
     container_name: my_postgres
@@ -192,4 +269,5 @@ volumes:
   grafana_data:
 networks:
   pad-net:
+    driver: bridge
 

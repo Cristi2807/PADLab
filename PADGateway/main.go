@@ -22,7 +22,8 @@ var routingThreshold int
 var ss sync.Map
 var concurrentTasks = make(chan bool, 5)
 
-var rdb *redis.Client
+// var rdb *redis.Client
+var rdb *redis.ClusterClient
 
 var registry = make(map[string][]string)
 var counter = make(map[string]int)
@@ -187,7 +188,7 @@ func main() {
 	requestCounts[500] = 0
 	requestCounts[429] = 0
 
-	redisURL, found := os.LookupEnv("REDIS_URL")
+	_, found := os.LookupEnv("REDIS_URL")
 
 	if found == false {
 		fmt.Println("REDIS_URL ENV variable not set!")
@@ -217,11 +218,14 @@ func main() {
 
 	routingThreshold = routingThresholdInt
 
-	rdb = redis.NewClient(&redis.Options{
-		Addr:     redisURL,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	//rdb = redis.NewClient(&redis.Options{
+	//	Addr:     redisURL,
+	//	Password: "", // no password set
+	//	DB:       0,  // use default DB
+	//})
+	rdb = redis.NewClusterClient(
+		&redis.ClusterOptions{Addrs: []string{"redis-node-1:7000", "redis-node-2:7001", "redis-node-3:7002",
+			"redis-node-4:7003", "redis-node-5:7004", "redis-node-6:7005"}})
 
 	go runServer()
 
