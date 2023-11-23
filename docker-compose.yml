@@ -254,8 +254,10 @@ services:
     image: grafana/grafana:latest
     ports:
       - '3000:3000'
+    depends_on:
+      - prometheus
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning/
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=secret
@@ -266,8 +268,6 @@ services:
 volumes:
   pg_data:   
   pgadmin_data:
-  grafana_data:
 networks:
   pad-net:
     driver: bridge
-
